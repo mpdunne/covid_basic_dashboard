@@ -156,7 +156,7 @@ def covid_data_layout():
         xaxis={'title': 'Date'},  # Don't use layout: linear
         yaxis={'title': 'Deaths'},
         margin={'l': 40, 'b': 40, 't': 10, 'r': 10},
-        hovermode='closest',
+        hovermode='x',
     )
 
 # A graph
