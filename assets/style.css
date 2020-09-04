@@ -1,0 +1,25 @@
+body {
+    margin: 50px;
+}
+
+.modebar{
+    display: none !important;
+}
+
+#slider-wrapper {
+    margin-top: 100px;
+  }
+  
+#output-container-range-slider {
+position: absolute;
+left: -12px;
+top: -40px;
+background-color: #428BCA;
+color: #FFFFFF;
+font-weight: bold;
+height: 35px;
+padding: 5px;
+width: 34px;
+text-align: center;
+display: none;  /* Hide flag until it is moved */
+}
