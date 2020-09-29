@@ -4,13 +4,11 @@ import dash_bootstrap_components as dbc
 import dash_core_components as dcc
 import dash_html_components as html
 import datetime
-import json
 import pandas as pd
-import plotly.express as px
+import numpy as np
 import plotly.graph_objs as go
 
 from dash.dependencies import Input, Output
-from urllib.request import urlopen
 
 ###################
 # App setup
@@ -129,14 +127,37 @@ checkbox_population = dbc.Checklist(
     value=[]
 )
 
+# Use a moving average?
+dropdown_moving_average = dcc.Dropdown(
+    id='window',
+    options=[
+        {'label': "None", 'value': 1},
+        {'label': '3-day', 'value': 3},
+        {'label': '5-day', 'value': 5},
+        {'label': '7-day', 'value': 7}
+    ],
+    value=1,
+    multi=False,
+    clearable=False,
+)
+
+
+def moving_average(a, n=3) :
+    ret = np.cumsum(a, dtype=float)
+    ret[n:] = ret[n:] - ret[:-n]
+    return ret[n - 1:] / n
+
+
 # Helper function for trace
-def covid_data_trace(country, deaths, daily, population=False):
+def covid_data_trace(country, deaths, daily, population=False, window=1):
     data = country_dfs_daily[country] if daily else country_dfs[country]
-    dates = [str(x) for x in country_dfs['US']['Date']]
+    dates = [str(x) for x in country_dfs['US']['Date']][window-1:]
     values = data['Deaths' if deaths else 'Confirmed']
 
     if population:
         values = values / populations[country]
+
+    values = list(moving_average(list(values), window))
 
     return go.Scatter(
         x=dates,
@@ -187,6 +208,10 @@ stats_card = dbc.Card(
                     ], className='container-fluid mb-2'),
 
             dbc.Row([
+                dbc.Col(["Moving average:"],
+                        className='col-12 col-sm-12 col-md-auto'),
+                dbc.Col([dropdown_moving_average],
+                        className='col-12 col-sm-12 col-md-3'),
                 dbc.Col([checkbox_population],
                         className='col-12 col-sm-12 col-md-auto')
             ]),
@@ -296,17 +321,19 @@ map_card = dbc.Card(
         Input('countries', 'value'),
         Input('statistics', 'value'),
         Input('display', 'value'),
-        Input('checkbox_population', 'value')
+        Input('checkbox_population', 'value'),
+        Input('window', 'value')
     ]
 )
-def update_graph(countries, statistics, display, population_options):
+def update_graph(countries, statistics, display, population_options, window):
     return {
         'data': [
             covid_data_trace(
                 country=country,
                 deaths=(statistics == 'deaths'),
                 population=("population" in population_options),
-                daily=(display == 'daily')
+                daily=(display == 'daily'),
+                window=window
             )
             for country in countries
         ],
